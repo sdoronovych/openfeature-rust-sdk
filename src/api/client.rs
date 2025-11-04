@@ -136,6 +136,86 @@ impl Client {
         }
     }
 
+    /// Evaluate given `flag_key` with corresponding `evaluation_context` and `evaluation_options`
+    /// as a bool values.
+    pub async fn get_bool_values(
+        &self,
+        flag_key: &str,
+        evaluation_context: Option<&EvaluationContext>,
+        evaluation_options: Option<&EvaluationOptions>,
+    ) -> EvaluationResult<Vec<bool>> {
+        self.get_bools_details(flag_key, evaluation_context, evaluation_options)
+            .await
+            .map(|details| details.value)
+    }
+
+    /// Evaluate given `flag_key` with corresponding `evaluation_context` and `evaluation_options`
+    /// as an int (i64) values.
+    pub async fn get_int_values(
+        &self,
+        flag_key: &str,
+        evaluation_context: Option<&EvaluationContext>,
+        evaluation_options: Option<&EvaluationOptions>,
+    ) -> EvaluationResult<Vec<i64>> {
+        self.get_ints_details(flag_key, evaluation_context, evaluation_options)
+            .await
+            .map(|details| details.value)
+    }
+
+    /// Evaluate given `flag_key` with corresponding `evaluation_context` and `evaluation_options`
+    /// as a float (f64) values.
+    /// If the resolution fails, the `default_value` is returned.
+    pub async fn get_float_values(
+        &self,
+        flag_key: &str,
+        evaluation_context: Option<&EvaluationContext>,
+        evaluation_options: Option<&EvaluationOptions>,
+    ) -> EvaluationResult<Vec<f64>> {
+        self.get_floats_details(flag_key, evaluation_context, evaluation_options)
+            .await
+            .map(|details| details.value)
+    }
+
+    /// Evaluate given `flag_key` with corresponding `evaluation_context` and `evaluation_options`
+    /// as a string values.
+    /// If the resolution fails, the `default_value` is returned.
+    pub async fn get_string_values(
+        &self,
+        flag_key: &str,
+        evaluation_context: Option<&EvaluationContext>,
+        evaluation_options: Option<&EvaluationOptions>,
+    ) -> EvaluationResult<Vec<String>> {
+        self.get_strings_details(flag_key, evaluation_context, evaluation_options)
+            .await
+            .map(|details| details.value)
+    }
+
+    /// Evaluate given `flag_key` with corresponding `evaluation_context` and `evaluation_options`
+    /// as a struct.
+    /// If the resolution fails, the `default_value` is returned.
+    /// The required type should implement [`From<StructValue>`] trait.
+    pub async fn get_struct_values<T: TryFrom<StructValue>>(
+        &self,
+        flag_key: &str,
+        evaluation_context: Option<&EvaluationContext>,
+        evaluation_options: Option<&EvaluationOptions>,
+    ) -> EvaluationResult<Vec<T>> {
+        let result = self
+            .get_structs_details(flag_key, evaluation_context, evaluation_options)
+            .await?;
+
+        result
+            .value
+            .into_iter()
+            .map(|struct_value| {
+                T::try_from(struct_value).map_err(|_| EvaluationError {
+                    code: EvaluationErrorCode::TypeMismatch,
+                    message: Some("Unable to cast value to required type".to_string()),
+                })
+            })
+            .collect()
+    }
+
     /// Return the [`EvaluationDetails`] with given `flag_key`, `evaluation_context` and
     /// `evaluation_options`.
     pub async fn get_bool_details(
@@ -244,6 +324,119 @@ impl Client {
                 message: Some("Unable to cast value to required type".to_string()),
             }),
         }
+    }
+
+    pub async fn get_bools_details(
+        &self,
+        flag_key: &str,
+        evaluation_context: Option<&EvaluationContext>,
+        evaluation_options: Option<&EvaluationOptions>,
+    ) -> EvaluationResult<EvaluationDetails<Vec<bool>>> {
+        let context = self.merge_evaluation_context(evaluation_context).await;
+
+        self.evaluate(
+            flag_key,
+            &context,
+            evaluation_options,
+            call_resolve_bool_values,
+        )
+        .await
+    }
+
+    /// Return the [`EvaluationDetails`] with given `flag_key`, `evaluation_context` and
+    /// `evaluation_options`.
+    pub async fn get_ints_details(
+        &self,
+        flag_key: &str,
+        evaluation_context: Option<&EvaluationContext>,
+        evaluation_options: Option<&EvaluationOptions>,
+    ) -> EvaluationResult<EvaluationDetails<Vec<i64>>> {
+        let context = self.merge_evaluation_context(evaluation_context).await;
+
+        self.evaluate(
+            flag_key,
+            &context,
+            evaluation_options,
+            call_resolve_int_values,
+        )
+        .await
+    }
+
+    /// Return the [`EvaluationDetails`] with given `flag_key`, `evaluation_context` and
+    /// `evaluation_options`.
+    pub async fn get_floats_details(
+        &self,
+        flag_key: &str,
+        evaluation_context: Option<&EvaluationContext>,
+        evaluation_options: Option<&EvaluationOptions>,
+    ) -> EvaluationResult<EvaluationDetails<Vec<f64>>> {
+        let context = self.merge_evaluation_context(evaluation_context).await;
+
+        self.evaluate(
+            flag_key,
+            &context,
+            evaluation_options,
+            call_resolve_float_values,
+        )
+        .await
+    }
+
+    /// Return the [`EvaluationDetails`] with given `flag_key`, `evaluation_context` and
+    /// `evaluation_options`.
+    pub async fn get_strings_details(
+        &self,
+        flag_key: &str,
+        evaluation_context: Option<&EvaluationContext>,
+        evaluation_options: Option<&EvaluationOptions>,
+    ) -> EvaluationResult<EvaluationDetails<Vec<String>>> {
+        let context = self.merge_evaluation_context(evaluation_context).await;
+
+        self.evaluate(
+            flag_key,
+            &context,
+            evaluation_options,
+            call_resolve_string_values,
+        )
+        .await
+    }
+
+    /// Return the [`EvaluationDetails`] with given `flag_key`, `evaluation_context` and
+    /// `evaluation_options`.
+    pub async fn get_structs_details<T: TryFrom<StructValue>>(
+        &self,
+        flag_key: &str,
+        evaluation_context: Option<&EvaluationContext>,
+        evaluation_options: Option<&EvaluationOptions>,
+    ) -> EvaluationResult<EvaluationDetails<Vec<T>>> {
+        let context = self.merge_evaluation_context(evaluation_context).await;
+
+        let result = self
+            .evaluate(
+                flag_key,
+                &context,
+                evaluation_options,
+                call_resolve_struct_values,
+            )
+            .await?;
+
+        let value: Vec<T> = result
+            .value
+            .into_iter()
+            .map(|value| {
+                T::try_from(value).map_err(|_| EvaluationError {
+                    code: EvaluationErrorCode::TypeMismatch,
+                    message: Some("Unable to cast value to required type".to_string()),
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(EvaluationDetails {
+            flag_key: flag_key.to_string(),
+            value,
+            reason: result.reason,
+            variant: result.variant,
+            flag_metadata: result.flag_metadata,
+        })
     }
 
     async fn get_provider(&self) -> Arc<dyn FeatureProvider> {
@@ -527,9 +720,49 @@ fn call_resolve_struct_value<'a>(
     Box::pin(async move { provider.resolve_struct_value(flag_key, context).await })
 }
 
+fn call_resolve_bool_values<'a>(
+    provider: &'a dyn FeatureProvider,
+    flag_key: &'a str,
+    context: &'a EvaluationContext,
+) -> Pin<Box<dyn Future<Output = EvaluationResult<ResolutionDetails<Vec<bool>>>> + Send + 'a>> {
+    Box::pin(async move { provider.resolve_bool_values(flag_key, context).await })
+}
+
+fn call_resolve_int_values<'a>(
+    provider: &'a dyn FeatureProvider,
+    flag_key: &'a str,
+    context: &'a EvaluationContext,
+) -> Pin<Box<dyn Future<Output = EvaluationResult<ResolutionDetails<Vec<i64>>>> + Send + 'a>> {
+    Box::pin(async move { provider.resolve_int_values(flag_key, context).await })
+}
+
+fn call_resolve_float_values<'a>(
+    provider: &'a dyn FeatureProvider,
+    flag_key: &'a str,
+    context: &'a EvaluationContext,
+) -> Pin<Box<dyn Future<Output = EvaluationResult<ResolutionDetails<Vec<f64>>>> + Send + 'a>> {
+    Box::pin(async move { provider.resolve_float_values(flag_key, context).await })
+}
+
+fn call_resolve_string_values<'a>(
+    provider: &'a dyn FeatureProvider,
+    flag_key: &'a str,
+    context: &'a EvaluationContext,
+) -> Pin<Box<dyn Future<Output = EvaluationResult<ResolutionDetails<Vec<String>>>> + Send + 'a>> {
+    Box::pin(async move { provider.resolve_string_values(flag_key, context).await })
+}
+
+fn call_resolve_struct_values<'a>(
+    provider: &'a dyn FeatureProvider,
+    flag_key: &'a str,
+    context: &'a EvaluationContext,
+) -> Pin<Box<dyn Future<Output = EvaluationResult<ResolutionDetails<Vec<StructValue>>>> + Send + 'a>>
+{
+    Box::pin(async move { provider.resolve_struct_values(flag_key, context).await })
+}
+
 #[cfg(test)]
 mod tests {
-
     use spec::spec;
 
     use crate::{
@@ -653,6 +886,76 @@ mod tests {
                 id: 100,
                 name: "Alex".to_string()
             }
+        );
+    }
+
+    #[tokio::test]
+    async fn get_values() {
+        let mut provider = MockFeatureProvider::new();
+        provider.expect_initialize().returning(|_| {});
+        provider.expect_hooks().return_const(vec![]);
+        provider
+            .expect_metadata()
+            .return_const(ProviderMetadata::default());
+
+        provider
+            .expect_resolve_bool_values()
+            .returning(|_, _| Ok(ResolutionDetails::new(vec![true])));
+
+        provider
+            .expect_resolve_int_values()
+            .returning(|_, _| Ok(ResolutionDetails::new(vec![123])));
+
+        provider
+            .expect_resolve_float_values()
+            .returning(|_, _| Ok(ResolutionDetails::new(vec![12.34])));
+
+        provider
+            .expect_resolve_string_values()
+            .returning(|_, _| Ok(ResolutionDetails::new(vec!["Hello".to_string()])));
+
+        provider.expect_resolve_struct_values().returning(|_, _| {
+            Ok(ResolutionDetails::new(vec![StructValue::default()
+                .with_field("id", 100)
+                .with_field("name", "Alex")]))
+        });
+
+        let client = create_client(provider).await;
+
+        assert_eq!(
+            client.get_bool_values("key", None, None).await.unwrap(),
+            vec![true]
+        );
+
+        assert_eq!(
+            client.get_int_values("key", None, None).await.unwrap(),
+            vec![123]
+        );
+
+        assert_eq!(
+            client.get_float_values("key", None, None).await.unwrap(),
+            vec![12.34]
+        );
+
+        assert_eq!(
+            client.get_string_values("", None, None).await.unwrap(),
+            vec!["Hello"]
+        );
+
+        println!(
+            "Result: {:?}",
+            client.get_struct_values::<Value>("", None, None).await
+        );
+
+        assert_eq!(
+            client
+                .get_struct_values::<Student>("", None, None)
+                .await
+                .unwrap(),
+            vec![Student {
+                id: 100,
+                name: "Alex".to_string()
+            }]
         );
     }
 

@@ -89,6 +89,41 @@ pub trait FeatureProvider: Send + Sync + 'static {
         flag_key: &str,
         evaluation_context: &EvaluationContext,
     ) -> EvaluationResult<ResolutionDetails<StructValue>>;
+
+    /// Resolve given `flag_key` as an array of bool values.
+    async fn resolve_bool_values(
+        &self,
+        flag_key: &str,
+        evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<bool>>>;
+
+    /// Resolve given `flag_key` as an array of int values.
+    async fn resolve_int_values(
+        &self,
+        flag_key: &str,
+        evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<i64>>>;
+
+    /// Resolve given `flag_key` as an array of float values.
+    async fn resolve_float_values(
+        &self,
+        flag_key: &str,
+        evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<f64>>>;
+
+    /// Resolve given `flag_key` as an array of string values.
+    async fn resolve_string_values(
+        &self,
+        flag_key: &str,
+        evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<String>>>;
+
+    /// Resolve given `flag_key` as an array of struct values.
+    async fn resolve_struct_values(
+        &self,
+        flag_key: &str,
+        evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<StructValue>>>;
 }
 
 // ============================================================

@@ -75,6 +75,46 @@ impl FeatureProvider for NoOpProvider {
     ) -> Result<ResolutionDetails<StructValue>, EvaluationError> {
         just_error()
     }
+
+    async fn resolve_bool_values(
+        &self,
+        _flag_key: &str,
+        _evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<bool>>> {
+        just_error()
+    }
+
+    async fn resolve_int_values(
+        &self,
+        _flag_key: &str,
+        _evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<i64>>> {
+        just_error()
+    }
+
+    async fn resolve_float_values(
+        &self,
+        _flag_key: &str,
+        _evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<f64>>> {
+        just_error()
+    }
+
+    async fn resolve_string_values(
+        &self,
+        _flag_key: &str,
+        _evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<String>>> {
+        just_error()
+    }
+
+    async fn resolve_struct_values(
+        &self,
+        _flag_key: &str,
+        _evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<StructValue>>> {
+        just_error()
+    }
 }
 
 fn just_error<T>() -> EvaluationResult<T> {
@@ -148,6 +188,18 @@ mod tests {
         assert!(provider.resolve_float_value("", &context).await.is_err());
         assert!(provider.resolve_string_value("", &context).await.is_err());
         assert!(provider.resolve_struct_value("", &context).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn resolve_values() {
+        let provider = NoOpProvider::default();
+        let context = EvaluationContext::default();
+
+        assert!(provider.resolve_bool_values("", &context).await.is_err());
+        assert!(provider.resolve_int_values("", &context).await.is_err());
+        assert!(provider.resolve_float_values("", &context).await.is_err());
+        assert!(provider.resolve_string_values("", &context).await.is_err());
+        assert!(provider.resolve_struct_values("", &context).await.is_err());
     }
 
     #[spec(

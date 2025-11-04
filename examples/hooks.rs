@@ -61,6 +61,46 @@ impl FeatureProvider for DummyProvider {
     ) -> Result<ResolutionDetails<StructValue>, EvaluationError> {
         unimplemented!()
     }
+
+    async fn resolve_bool_values(
+        &self,
+        _flag_key: &str,
+        _evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<bool>>> {
+        unimplemented!()
+    }
+
+    async fn resolve_int_values(
+        &self,
+        _flag_key: &str,
+        _evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<i64>>> {
+        unimplemented!()
+    }
+
+    async fn resolve_float_values(
+        &self,
+        _flag_key: &str,
+        _evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<f64>>> {
+        unimplemented!()
+    }
+
+    async fn resolve_string_values(
+        &self,
+        _flag_key: &str,
+        _evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<String>>> {
+        unimplemented!()
+    }
+
+    async fn resolve_struct_values(
+        &self,
+        _flag_key: &str,
+        _evaluation_context: &EvaluationContext,
+    ) -> EvaluationResult<ResolutionDetails<Vec<StructValue>>> {
+        unimplemented!()
+    }
 }
 
 struct DummyLoggingHook(String);
